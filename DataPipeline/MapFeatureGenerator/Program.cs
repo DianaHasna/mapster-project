@@ -12,6 +12,8 @@ namespace MapFeatureGenerator;
 
 public static class Program
 {
+    private static List<long> featureIds;
+
     private static MapData LoadOsmFile(ReadOnlySpan<char> osmFilePath)
     {
         var nodes = new ConcurrentDictionary<long, AbstractNode>();
@@ -68,10 +70,14 @@ public static class Program
 
     private static void CreateMapDataFile(ref MapData mapData, string filePath)
     {
+        CreateMapDataFile(ref mapData, filePath, featureIds);
+    }
+
+    private static void CreateMapDataFile(ref MapData mapData, string filePath, List<long> featureIds)
+    {
         var usedNodes = new HashSet<long>();
 
         long featureIdCounter = -1;
-        var featureIds = new List<long>();
         // var geometryTypes = new List<GeometryType>();
         // var coordinates = new List<(long id, (int offset, List<Coordinate> coordinates) values)>();
 
@@ -97,9 +103,7 @@ public static class Program
         {
             // FIXME: Not thread safe
             usedNodes.Clear();
-
-            // FIXME: Not thread safe
-            featureIds.Clear();
+            new List<long>().Clear();
             labels.Clear();
 
             var totalCoordinateCount = 0;
@@ -175,8 +179,7 @@ public static class Program
                 {
                     throw new InvalidDataContractException("Property keys and values should have the same count");
                 }
-
-                featureIds.Add(featureId);
+                new List<long>().Add(featureId);
                 featuresData.Add(featureId, featureData);
             }
 
@@ -222,7 +225,7 @@ public static class Program
                     PropertyValues = (totalPropertyCount, featurePropValues)
                 };
                 featuresData.Add(featureId, fData);
-                featureIds.Add(featureId);
+                new List<long>().Add(featureId);
 
                 totalPropertyCount += featurePropKeys.Count;
                 ++totalCoordinateCount;
@@ -231,7 +234,7 @@ public static class Program
             offsets.Add(tileId, fileWriter.BaseStream.Position);
 
             // Write TileBlockHeader
-            fileWriter.Write(featureIds.Count); // TileBlockHeader: FeatureCount
+            fileWriter.Write(new List<long>().Count); // TileBlockHeader: FeatureCount
             fileWriter.Write(totalCoordinateCount); // TileBlockHeader: CoordinateCount
             fileWriter.Write(totalPropertyCount * 2); // TileBlockHeader: StringCount
             fileWriter.Write(0); //TileBlockHeader: CharactersCount
@@ -252,11 +255,11 @@ public static class Program
             fileWriter.Write((long)0); // TileBlockHeader: CharactersOffsetInBytes (placeholder)
 
             // Write MapFeatures
-            for (var i = 0; i < featureIds.Count; ++i)
+            for (int i = 0; i < new List<long>().Count; ++i)
             {
-                var featureData = featuresData[featureIds[i]];
+                var featureData = featuresData[new List<long>()[i]];
 
-                fileWriter.Write(featureIds[i]); // MapFeature: Id
+                fileWriter.Write(new List<long>()[i]); // MapFeature: Id
                 fileWriter.Write(labels[i]); // MapFeature: LabelOffset
                 fileWriter.Write(featureData.GeometryType); // MapFeature: GeometryType
                 fileWriter.Write(featureData.Coordinates.offset); // MapFeature: CoordinateOffset
@@ -273,7 +276,7 @@ public static class Program
             fileWriter.Write(currentPosition); // TileBlockHeader: CoordinatesOffsetInBytes
             // And seek forward to continue updating the file
             fileWriter.BaseStream.Position = currentPosition;
-            foreach (var t in featureIds)
+            foreach (var t in new List<long>())
             {
                 var featureData = featuresData[t];
 
@@ -294,7 +297,7 @@ public static class Program
             fileWriter.BaseStream.Position = currentPosition;
 
             var stringOffset = 0;
-            foreach (var t in featureIds)
+            foreach (var t in new List<long>())
             {
                 var featureData = featuresData[t];
                 for (var i = 0; i < featureData.PropertyKeys.keys.Count; ++i)
@@ -320,7 +323,7 @@ public static class Program
             fileWriter.Write(currentPosition); // TileBlockHeader: CharactersOffsetInBytes
             // And seek forward to continue updating the file
             fileWriter.BaseStream.Position = currentPosition;
-            foreach (var t in featureIds)
+            foreach (var t in new List<long>())
             {
                 var featureData = featuresData[t];
                 for (var i = 0; i < featureData.PropertyKeys.keys.Count; ++i)
